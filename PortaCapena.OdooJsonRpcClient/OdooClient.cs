@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -23,7 +24,11 @@ namespace PortaCapena.OdooJsonRpcClient
         private static HttpClient _client;
         public OdooConfig Config { get; }
 
-        [ThreadStatic] private static int? _userUid;
+        private static readonly ConcurrentDictionary<string, int> _uidCache = new ConcurrentDictionary<string, int>();
+        private static readonly ConcurrentDictionary<string, SemaphoreSlim> _loginLocks = new ConcurrentDictionary<string, SemaphoreSlim>();
+
+        private string CacheKey => $"{Config.ApiUrl}|{Config.DbName}|{Config.UserName}";
+        private SemaphoreSlim LoginLock => _loginLocks.GetOrAdd(CacheKey, _ => new SemaphoreSlim(1, 1));
 
         /// <summary>
         /// Can be set to false, if server certificate shall not be validated.
@@ -298,17 +303,31 @@ namespace PortaCapena.OdooJsonRpcClient
 
         public async Task<OdooResult<int>> GetCurrentUserUidOrLoginAsync(CancellationToken cancellationToken = default)
         {
-            if (_userUid.HasValue)
-                return await Task.FromResult(OdooResult<int>.SucceedResult(_userUid.Value));
+            if (_uidCache.TryGetValue(CacheKey, out var uid))
+                return OdooResult<int>.SucceedResult(uid);
 
-            return await LoginAsync(cancellationToken);
+            var loginLock = LoginLock;
+            await loginLock.WaitAsync(cancellationToken);
+            try
+            {
+                // Double check after lock is acquired
+                if (_uidCache.TryGetValue(CacheKey, out uid))
+                    return OdooResult<int>.SucceedResult(uid);
+
+                return await LoginAsync(cancellationToken);
+            }
+            finally
+            {
+                loginLock.Release();
+            }
         }
+
         public async Task<OdooResult<int>> LoginAsync(CancellationToken cancellationToken = default)
         {
             var result = await LoginAsync(Config, cancellationToken);
 
             if (result.Succeed)
-                _userUid = result.Value;
+                _uidCache[CacheKey] = result.Value;
 
             return result;
         }
@@ -358,6 +377,9 @@ namespace PortaCapena.OdooJsonRpcClient
 
             if (!result.Failed || !string.Equals(result.Error?.Data?.Name, OdooExceptionName.AccessDenied))
                 return result;
+
+            // Invalidate cached uid before re-login
+            _uidCache.TryRemove(CacheKey, out _);
 
             var loginUid = await LoginAsync(cancellationToken);
             if (loginUid.Failed)
