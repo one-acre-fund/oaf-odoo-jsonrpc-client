@@ -27,14 +27,14 @@ jobs:
       run: dotnet test PortaCapena.OdooJsonRpcClient.Tests/PortaCapena.OdooJsonRpcClient.Tests.csproj --configuration Release --no-restore --no-build
       
     - name: Create Nuget Package
-      run: dotnet pack --configuration Release /p:Version=${{github.event.release.tag_name}} /p:PackageReleaseNotes="See https://github.com/patricoos/PortaCapena.OdooJsonRpcClient/releases/tag/${{github.event.release.tag_name}}"     
+      run: dotnet pack --configuration Release /p:Version=${{github.event.release.tag_name}} /p:PackageReleaseNotes="See https://github.com/oaf/oaf-odoo-jsonrpc-client/releases/tag/${{github.event.release.tag_name}}"
       working-directory: ./PortaCapena.OdooJsonRpcClient
-      
+
     - name: Archive Nuget Package
       uses: actions/upload-artifact@v1
       with:
-        name:  PortaCapena.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg
-        path: ./PortaCapena.OdooJsonRpcClient/bin/Release/PortaCapena.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg
-        
+        name:  OAF.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg
+        path: ./PortaCapena.OdooJsonRpcClient/bin/Release/OAF.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg
+
     - name: Publish NuGet Package
-      run: dotnet nuget push **/PortaCapena.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json --no-symbols true
+      run: dotnet nuget push **/OAF.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg --api-key ${{secrets.NUGET_API_KEY}} --source https://api.nuget.org/v3/index.json --no-symbols true
