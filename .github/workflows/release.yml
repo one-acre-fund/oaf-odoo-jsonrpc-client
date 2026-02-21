@@ -9,23 +9,23 @@ jobs:
     runs-on: ubuntu-latest
     env:
       config: 'Release'
-    
+
     steps:
     - uses: actions/checkout@v4
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 6.0.x
-        
+
     - name: Install dependencies
       run: dotnet restore
 
-    - name: Build 
+    - name: Build
       run: dotnet build --configuration Release --no-restore
-      
-    - name: Test      
+
+    - name: Test
       run: dotnet test PortaCapena.OdooJsonRpcClient.Tests/PortaCapena.OdooJsonRpcClient.Tests.csproj --configuration Release --no-restore --no-build
-      
+
     - name: Create Nuget Package
       run: dotnet pack --configuration Release /p:Version=${{github.event.release.tag_name}} /p:PackageReleaseNotes="See https://github.com/one-acre-fund/oaf-odoo-jsonrpc-client/releases/tag/${{github.event.release.tag_name}}"
       working-directory: ./PortaCapena.OdooJsonRpcClient
@@ -35,6 +35,6 @@ jobs:
       with:
         name:  OAF.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg
         path: ./PortaCapena.OdooJsonRpcClient/bin/Release/OAF.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg
-        
+
     - name: Publish NuGet Package to Azure Artifacts
       run: dotnet nuget push **/OAF.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg --api-key ${{secrets.AZURE_DEVOPS_FEED_ACCESSTOKEN}} --source https://pkgs.dev.azure.com/OAFDev/_packaging/oaf.dev/nuget/v3/index.json --no-symbols
