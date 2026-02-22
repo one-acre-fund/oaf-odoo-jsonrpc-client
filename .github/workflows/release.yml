@@ -3,6 +3,14 @@ name: Release to nuget
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number'
+        required: true
 
 jobs:
   publish-nuget:
@@ -12,6 +20,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    - name: Determine version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "release" ]; then
+          echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+        elif [ "${{ github.event_name }}" = "push" ]; then
+          echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+        else
+          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+        fi
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -27,14 +47,14 @@ jobs:
       run: dotnet test PortaCapena.OdooJsonRpcClient.Tests/PortaCapena.OdooJsonRpcClient.Tests.csproj --configuration Release --no-restore --no-build
 
     - name: Create Nuget Package
-      run: dotnet pack --configuration Release /p:Version=${{github.event.release.tag_name}} /p:PackageReleaseNotes="See https://github.com/one-acre-fund/oaf-odoo-jsonrpc-client/releases/tag/${{github.event.release.tag_name}}"
+      run: dotnet pack --configuration Release /p:Version=${{ steps.version.outputs.version }} /p:PackageReleaseNotes="See https://github.com/one-acre-fund/oaf-odoo-jsonrpc-client/releases/tag/${{ steps.version.outputs.version }}"
       working-directory: ./PortaCapena.OdooJsonRpcClient
 
     - name: Archive Nuget Package
       uses: actions/upload-artifact@v1
       with:
-        name:  OAF.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg
-        path: ./PortaCapena.OdooJsonRpcClient/bin/Release/OAF.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg
+        name:  OAF.OdooJsonRpcClient.${{ steps.version.outputs.version }}.nupkg
+        path: ./PortaCapena.OdooJsonRpcClient/bin/Release/OAF.OdooJsonRpcClient.${{ steps.version.outputs.version }}.nupkg
 
     - name: Publish NuGet Package to Azure Artifacts
-      run: dotnet nuget push **/OAF.OdooJsonRpcClient.${{github.event.release.tag_name}}.nupkg --api-key ${{secrets.AZURE_DEVOPS_FEED_ACCESSTOKEN}} --source https://pkgs.dev.azure.com/OAFDev/_packaging/oaf.dev/nuget/v3/index.json --no-symbols
+      run: dotnet nuget push **/OAF.OdooJsonRpcClient.${{ steps.version.outputs.version }}.nupkg --api-key ${{secrets.AZURE_DEVOPS_FEED_ACCESSTOKEN}} --source https://pkgs.dev.azure.com/OAFDev/_packaging/oaf.dev/nuget/v3/index.json --no-symbols
