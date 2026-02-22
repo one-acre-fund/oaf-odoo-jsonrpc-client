@@ -25,12 +25,15 @@ jobs:
       id: version
       run: |
         if [ "${{ github.event_name }}" = "release" ]; then
-          echo "version=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          VERSION="${{ github.event.release.tag_name }}"
         elif [ "${{ github.event_name }}" = "push" ]; then
-          echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          VERSION="${{ github.ref_name }}"
         else
-          echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          VERSION="${{ github.event.inputs.version }}"
         fi
+        # Strip 'v' prefix if present
+        VERSION="${VERSION#v}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
