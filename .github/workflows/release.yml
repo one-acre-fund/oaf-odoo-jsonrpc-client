@@ -59,5 +59,13 @@ jobs:
         name:  OAF.OdooJsonRpcClient.${{ steps.version.outputs.version }}.nupkg
         path: ./PortaCapena.OdooJsonRpcClient/bin/Release/OAF.OdooJsonRpcClient.${{ steps.version.outputs.version }}.nupkg
 
+    - name: Add Azure Artifacts source
+      run: |
+        dotnet nuget add source https://pkgs.dev.azure.com/OAFDev/_packaging/oaf.dev/nuget/v3/index.json \
+          --name OAFArtifacts \
+          --username az \
+          --password ${{ secrets.AZURE_DEVOPS_FEED_ACCESSTOKEN }} \
+          --store-password-in-clear-text
+
     - name: Publish NuGet Package to Azure Artifacts
-      run: dotnet nuget push **/OAF.OdooJsonRpcClient.${{ steps.version.outputs.version }}.nupkg --source https://pkgs.dev.azure.com/OAFDev/_packaging/oaf.dev/nuget/v3/index.json --api-key az:${{ secrets.AZURE_DEVOPS_FEED_ACCESSTOKEN }} --skip-duplicate
+      run: dotnet nuget push **/OAF.OdooJsonRpcClient.${{ steps.version.outputs.version }}.nupkg --source OAFArtifacts --api-key AzureDevOps --skip-duplicate
