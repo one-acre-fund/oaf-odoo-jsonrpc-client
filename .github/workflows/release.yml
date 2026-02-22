@@ -51,7 +51,7 @@ jobs:
       working-directory: ./PortaCapena.OdooJsonRpcClient
 
     - name: Archive Nuget Package
-      uses: actions/upload-artifact@v1
+      uses: actions/upload-artifact@v4
       with:
         name:  OAF.OdooJsonRpcClient.${{ steps.version.outputs.version }}.nupkg
         path: ./PortaCapena.OdooJsonRpcClient/bin/Release/OAF.OdooJsonRpcClient.${{ steps.version.outputs.version }}.nupkg
