@@ -13,7 +13,7 @@
     <Copyright>OAF</Copyright>
     <PackageTags>Odoo JsonRpc Client</PackageTags>
     <Description>JsonRpc Odoo Client (fork with login caching fix)</Description>
-    <Version>1.0.22</Version>
+    <Version>1.0.23</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
   </PropertyGroup>
